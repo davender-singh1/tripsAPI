@@ -1,76 +1,82 @@
-const TripDB = require("./modules/tripsDB.js");
-const db = new TripDB();
+const HTTP_PORT = process.env.PORT || 8080;
 const express = require("express");
-const path = require("path");
 const cors = require("cors");
 require('dotenv').config();
-const bodyParser = require('body-parser');
-const { default: mongoose } = require('mongoose');
 const app = express();
-const HTTP_PORT = process.env.PORT || 8080;
+const TripsDB = require("./modules/tripsDB.js");
+const db = new TripsDB();
 
-app.use(bodyParser.json());
-app.use(express.json());
 app.use(cors());
-
+app.use(express.json());
 
 app.get("/", (req, res) => {
-    res.json({message: "API Listening"});
-})
 
-app.post('/api/trips', (req, res) => {
-    if(Object.keys(req.body).length === 0) {
-      res.status(500).json({ error: "Invalid number "});
-    } else {
-      db.addNewTrip(req.body).then((data) => { res.status(201).json(data)
-      }).catch((err) => { res.status(500).json({ error: err }); });
-    }
-  });
-  
-  app.get('/api/trips', (req, res) => {
-      db.getAllTrips(req.query.page, req.query.perPage, req.query.title).then((data) => {
-        if (data.length === 0) res.status(204).json({ message: "No data returned"});  
-        else res.status(201).json(data);  
-      }).catch((err) => {
-        res.status(500).json({ error: err }); 
-      })
-  });
-  
- 
-  app.get('/api/trips/:_id', (req, res) => {
-    db.getTripById(req.params._id).then((data) => {
-      res.status(201).json(data)  
-    }).catch((err) => {
-      res.status(500).json({ error: err });
-    })
-  })
-  
-  app.put('/api/trips/:_id', async (req, res) => {
-    try {
-      if (Object.keys(req.body).length === 0) {
-        return res.status(500).json({ error: "No data to update"});
-      }
-      const data = await db.updateTripsById(req.body, req.params._id);
-      res.json({ success: "Trips updated!"});
-    }catch(err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  
-  app.delete('/api/trips/:_id', async (req, res) => {
-    db.deleteTripById(req.params._id).then(() => {
-      res.status(202).json({ message: `The ${req.params._id} removed from the system`})  
-      .catch((err) => {
-        res.status(500).json({ error: err })
-      })
-    })
-  });
-  
+    res.json({ message: "API Listening" });
 
-  db.initialize("Your MongoDB Connection String Goes Here").then(()=>{
-    app.listen(HTTP_PORT, ()=>{
+});
+
+app.post("/api/trips", (req, res) => {
+
+    db.addNewMovie(req.body)
+        .then(data => res.status(201).json(data))
+        .catch((err) => {
+            res.status(500).json(err);
+        });
+
+});
+
+app.get("/api/trips", (req, res) => {
+
+    let page = req.query.page ? req.query.page : 0;
+    let perPage = req.query.perPage ? req.query.perPage : 0;
+    let title = req.query.title;
+    db.getAllTrips(page, perPage, title)
+        .then(data => res.json(data))
+        .catch((err) => {
+            res.status(500).json(err);
+        });
+
+});
+
+app.get("/api/trips/:id", (req, res) => {
+
+    db.getMovieById(req.params.id)
+        .then((movie) => {
+            movie ? res.json(movie) : res.status(404).json({ "message": "Resource not found" });
+        })
+        .catch((err) => {
+            res.status(500).json({ "message": "Server internal error" });
+        });
+
+});
+
+app.put("/api/trips/:id", (req, res) => {
+
+    if (req.body.id && req.params.id != req.body.id) {
+        res.status(400).json({ "message": "IDs not match" });
+    }
+    else {
+        db.updateMovieById(req.body, req.params.id).then(() => { res.json({ "message": "the object updated" }) })
+            .catch((err) => {
+                res.status(500).json({ "message": "Server internal error" });
+            });
+    }
+
+});
+
+app.delete("/api/trips/:id", (req, res) => {
+
+    db.deleteMovieById(req.params.id).then(() => { res.json() }).catch((err) => {
+        res.status(500).json({ "message": "Server internal error" });
+    });
+    res.status(204).end();
+
+});
+
+db.initialize(process.env.MONGODB_CONN_STRING).then(() => {
+    app.listen(HTTP_PORT, () => {
         console.log(`server listening on: ${HTTP_PORT}`);
     });
-}).catch((err)=>{
+}).catch((err) => {
     console.log(err);
 });
