@@ -1,4 +1,4 @@
-const TripDB = require("./modules/tripDB.js");
+const TripDB = require("./modules/tripsDB.js");
 const db = new TripDB();
 const express = require("express");
 const path = require("path");
@@ -28,7 +28,7 @@ app.post('/api/trips', (req, res) => {
   });
   
   app.get('/api/trips', (req, res) => {
-      db.getAlltrips(req.query.page, req.query.perPage, req.query.title).then((data) => {
+      db.getAllTrips(req.query.page, req.query.perPage, req.query.title).then((data) => {
         if (data.length === 0) res.status(204).json({ message: "No data returned"});  
         else res.status(201).json(data);  
       }).catch((err) => {
@@ -38,14 +38,14 @@ app.post('/api/trips', (req, res) => {
   
  
   app.get('/api/trips/:_id', (req, res) => {
-    db.getTripsById(req.params._id).then((data) => {
+    db.getTripById(req.params._id).then((data) => {
       res.status(201).json(data)  
     }).catch((err) => {
       res.status(500).json({ error: err });
     })
   })
   
-  app.put('/api/Trips/:_id', async (req, res) => {
+  app.put('/api/trips/:_id', async (req, res) => {
     try {
       if (Object.keys(req.body).length === 0) {
         return res.status(500).json({ error: "No data to update"});
@@ -58,7 +58,7 @@ app.post('/api/trips', (req, res) => {
   });
   
   app.delete('/api/trips/:_id', async (req, res) => {
-    db.deleteTripsById(req.params._id).then(() => {
+    db.deleteTripById(req.params._id).then(() => {
       res.status(202).json({ message: `The ${req.params._id} removed from the system`})  
       .catch((err) => {
         res.status(500).json({ error: err })
